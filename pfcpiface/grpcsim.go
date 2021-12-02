@@ -189,12 +189,18 @@ func (u *upf) sim(method string, s *SimModeInfo) {
 
 		qers = append(qers, sessionQer)
 
+		allRules := PacketForwardingRules{
+			pdrs: pdrs,
+			fars: fars,
+			qers: qers,
+		}
+
 		switch method {
 		case "create":
-			u.sendMsgToUPF(upfMsgTypeAdd, pdrs, fars, qers)
+			u.sendMsgToUPF(upfMsgTypeAdd, allRules, PacketForwardingRules{})
 
 		case "delete":
-			u.sendMsgToUPF(upfMsgTypeDel, pdrs, fars, qers)
+			u.sendMsgToUPF(upfMsgTypeDel, allRules, PacketForwardingRules{})
 
 		default:
 			log.Fatalln("Unsupported method", method)

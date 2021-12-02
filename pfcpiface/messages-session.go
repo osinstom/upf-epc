@@ -120,7 +120,7 @@ func (pConn *PFCPConn) handleSessionEstablishmentRequest(msg message.Message) (m
 
 	session.MarkSessionQer()
 
-	cause := upf.sendMsgToUPF(upfMsgTypeAdd, session.pdrs, session.fars, session.qers)
+	cause := upf.sendMsgToUPF(upfMsgTypeAdd, session.PacketForwardingRules, PacketForwardingRules{})
 	if cause == ie.CauseRequestRejected {
 		pConn.RemoveSession(session.localSEID)
 		return errProcessReply(errors.New("write to FastPath failed"),
@@ -302,7 +302,13 @@ func (pConn *PFCPConn) handleSessionModificationRequest(msg message.Message) (me
 
 	session.MarkSessionQer()
 
-	cause := upf.sendMsgToUPF(upfMsgTypeMod, addPDRs, addFARs, addQERs)
+	updated := PacketForwardingRules{
+		pdrs: addPDRs,
+		fars: addFARs,
+		qers: addQERs,
+	}
+
+	cause := upf.sendMsgToUPF(upfMsgTypeMod, session.PacketForwardingRules, updated)
 	if cause == ie.CauseRequestRejected {
 		return sendError(errors.New("write to FastPath failed"))
 	}
@@ -364,7 +370,12 @@ func (pConn *PFCPConn) handleSessionModificationRequest(msg message.Message) (me
 		delQERs = append(delQERs, *q)
 	}
 
-	cause = upf.sendMsgToUPF(upfMsgTypeDel, delPDRs, delFARs, delQERs)
+	deleted := PacketForwardingRules{
+		pdrs: delPDRs,
+		fars: delFARs,
+		qers: delQERs,
+	}
+	cause = upf.sendMsgToUPF(upfMsgTypeDel, deleted, PacketForwardingRules{})
 	if cause == ie.CauseRequestRejected {
 		return sendError(errors.New("write to FastPath failed"))
 	}
@@ -409,7 +420,7 @@ func (pConn *PFCPConn) handleSessionDeletionRequest(msg message.Message) (messag
 		return sendError(fmt.Errorf("session not found: %v", localSEID))
 	}
 
-	cause := upf.sendMsgToUPF(upfMsgTypeDel, session.pdrs, session.fars, session.qers)
+	cause := upf.sendMsgToUPF(upfMsgTypeDel, session.PacketForwardingRules, PacketForwardingRules{})
 	if cause == ie.CauseRequestRejected {
 		return sendError(errors.New("write to FastPath failed"))
 	}
@@ -520,7 +531,7 @@ func (pConn *PFCPConn) handleSessionReportResponse(msg message.Message) (message
 		pConn.RemoveSession(seid)
 
 		cause := upf.sendMsgToUPF(
-			upfMsgTypeDel, sessItem.pdrs, sessItem.fars, sessItem.qers)
+			upfMsgTypeDel, sessItem.PacketForwardingRules, PacketForwardingRules{})
 		if cause == ie.CauseRequestRejected {
 			return nil, errProcess(
 				fmt.Errorf("delete session from fastpath failed for: %v", seid))
