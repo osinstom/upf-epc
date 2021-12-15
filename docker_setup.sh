@@ -3,6 +3,9 @@
 # Copyright(c) 2019 Intel Corporation
 
 set -e
+
+PFCPIFACE_VERSION=latest
+
 # TCP port of bess/web monitor
 gui_port=8000
 bessd_port=10514
@@ -158,7 +161,7 @@ docker run --name bess -td --restart unless-stopped \
 	--net container:pause \
 	$PRIVS \
 	$DEVICES \
-	upf-epc-bess:"$(<VERSION)" -grpc-url=0.0.0.0:$bessd_port
+	bess-upf:"$(<VERSION)" -grpc-url=0.0.0.0:$bessd_port
 
 docker logs bess
 
@@ -171,13 +174,13 @@ sleep 10
 docker run --name bess-web -d --restart unless-stopped \
 	--net container:bess \
 	--entrypoint bessctl \
-	upf-epc-bess:"$(<VERSION)" http 0.0.0.0 $gui_port
+	bess-upf:"$(<VERSION)" http 0.0.0.0 $gui_port
 
 # Run bess-pfcpiface depending on mode type
 docker run --name bess-pfcpiface -td --restart on-failure \
 	--net container:pause \
 	-v "$PWD/conf/upf.json":/conf/upf.json \
-	upf-epc-pfcpiface:"$(<VERSION)" \
+	ghcr.io/omec-project/pfcpiface:"${PFCPIFACE_VERSION}" \
 	-config /conf/upf.json
 
 # Don't run any other container if mode is "sim"

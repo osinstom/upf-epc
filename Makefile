@@ -58,6 +58,6 @@ pb:
 		--target pb \
 		--output output \
 		.;
-	cp -a output/bess_pb ${BESS_PB_DIR}
+	cp -r output/bess_pb/* ${BESS_PB_DIR}
 
 .PHONY: docker-build docker-push output pb

@@ -3,7 +3,10 @@ SPDX-License-Identifier: Apache-2.0
 Copyright(c) 2019 Intel Corporation
 -->
 
-# UPF-EPC - Installation Instructions
+# BESS-UPF - Installation Instructions
+
+This guide shows how to quickly run and test BESS-UPF with the PFCP Agent (pfcpiface) using simulation mode.
+To learn how to deploy BESS-UPF with pfcpiface in the operational mode refer to [the pfcpiface repository](https://github.com/omec-project/pfcpiface).
 
 ## Pre-reqs
 
@@ -17,7 +20,7 @@ You need the following dependencies.
 * Update [`docker_setup.sh`](../docker_setup.sh) and [`conf/up4.bess`](../conf/up4.bess) to run pktgen tests
 * Update [`docker_setup.sh`](../docker_setup.sh) and [`conf/up4.bess`](../conf/up4.bess) to run sim mode tests
 
->`docker_setup.sh` is a quick start guide to set up UPF-EPC for evaluation.
+>`docker_setup.sh` is a quick start guide to set up BESS-UPF for evaluation.
 
 ## Run
 
@@ -81,14 +84,14 @@ localhost:10514 $ tcpdump gtpuEncap out 1 -c 128 -w conf/gtpuEncapOut.pcap
 
 #### Simulation mode
 
-UPF-EPC has a simulation mode that enables testing the pipeline on a single machine,
+BESS-UPF has a simulation mode that enables testing the pipeline on a single machine,
 without the need for external interfaces.
 
 > Note: This mode does not support multiple workers currently.
 
 ![ubench-sim](images/ubench-sim.svg)
 
-To start UPF-EPC in simulation mode:
+To start BESS-UPF in simulation mode:
 
 1. Enable sim mode in configuration files
 
