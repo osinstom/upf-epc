@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020-present Open Networking Foundation
 
-PROJECT_NAME             := upf-epc
+PROJECT_NAME             := bess-upf
 VERSION                  ?= $(shell cat ./VERSION)
 
 # Note that we set the target platform of Docker images to native
@@ -14,9 +14,8 @@ ENABLE_NTF               ?= 0
 
 ## Docker related
 DOCKER_REGISTRY          ?=
-DOCKER_REPOSITORY        ?=
 DOCKER_TAG               ?= ${VERSION}
-DOCKER_IMAGENAME         := ${DOCKER_REGISTRY}${DOCKER_REPOSITORY}${PROJECT_NAME}:${DOCKER_TAG}
+DOCKER_IMAGENAME         := ${DOCKER_REGISTRY}${PROJECT_NAME}:${DOCKER_TAG}
 DOCKER_BUILDKIT          ?= 1
 DOCKER_BUILD_ARGS        ?= --build-arg MAKEFLAGS=-j$(shell nproc) --build-arg CPU
 DOCKER_BUILD_ARGS        += --build-arg ENABLE_NTF=$(ENABLE_NTF)
@@ -28,28 +27,20 @@ DOCKER_LABEL_VCS_REF     ?= $(shell git diff-index --quiet HEAD -- && git rev-pa
 DOCKER_LABEL_COMMIT_DATE ?= $(shell git diff-index --quiet HEAD -- && git show -s --format=%cd --date=iso-strict HEAD || echo "unknown" )
 DOCKER_LABEL_BUILD_DATE  ?= $(shell date -u "+%Y-%m-%dT%H:%M:%SZ")
 
-DOCKER_TARGETS           ?= bess pfcpiface
-
-# https://docs.docker.com/engine/reference/commandline/build/#specifying-target-build-stage---target
 docker-build:
-	for target in $(DOCKER_TARGETS); do \
-		DOCKER_BUILDKIT=$(DOCKER_BUILDKIT) docker build $(DOCKER_PULL) $(DOCKER_BUILD_ARGS) \
-			--target $$target \
-			--tag ${DOCKER_REGISTRY}${DOCKER_REPOSITORY}upf-epc-$$target:${DOCKER_TAG} \
-			--label org.opencontainers.image.source="https://github.com/omec-project/upf-epc" \
-			--label org.label.schema.version="${VERSION}" \
-			--label org.label.schema.vcs.url="${DOCKER_LABEL_VCS_URL}" \
-			--label org.label.schema.vcs.ref="${DOCKER_LABEL_VCS_REF}" \
-			--label org.label.schema.build.date="${DOCKER_LABEL_BUILD_DATE}" \
-			--label org.opencord.vcs.commit.date="${DOCKER_LABEL_COMMIT_DATE}" \
-			. \
-			|| exit 1; \
-	done
+	DOCKER_BUILDKIT=$(DOCKER_BUILDKIT) docker build $(DOCKER_PULL) $(DOCKER_BUILD_ARGS) \
+		--target bess \
+		--tag ${DOCKER_IMAGENAME} \
+		--label org.opencontainers.image.source="https://github.com/omec-project/upf-epc" \
+		--label org.label.schema.version="${VERSION}" \
+		--label org.label.schema.vcs.url="${DOCKER_LABEL_VCS_URL}" \
+		--label org.label.schema.vcs.ref="${DOCKER_LABEL_VCS_REF}" \
+		--label org.label.schema.build.date="${DOCKER_LABEL_BUILD_DATE}" \
+		--label org.opencord.vcs.commit.date="${DOCKER_LABEL_COMMIT_DATE}" \
+		.;
 
 docker-push:
-	for target in $(DOCKER_TARGETS); do \
-		docker push ${DOCKER_REGISTRY}${DOCKER_REPOSITORY}upf-epc-$$target:${DOCKER_TAG}; \
-	done
+	docker push ${DOCKER_IMAGENAME};
 
 # Change target to bess-build/pfcpiface to exctract src/obj/bins for performance analysis
 output:
@@ -60,7 +51,7 @@ output:
 	rm -rf output && mkdir output && tar -xf output.tar -C output && rm -f output.tar
 
 # Golang grpc/protobuf generation
-BESS_PB_DIR ?= pfcpiface
+BESS_PB_DIR ?= go/v1
 
 pb:
 	DOCKER_BUILDKIT=$(DOCKER_BUILDKIT) docker build $(DOCKER_PULL) $(DOCKER_BUILD_ARGS) \

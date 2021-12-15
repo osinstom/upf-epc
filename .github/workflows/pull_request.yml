@@ -10,7 +10,6 @@ jobs:
   build:
     env:
       DOCKER_REGISTRY: "ghcr.io/omec-project/"
-      DOCKER_REPOSITORY: "upf-epc/"
       VERSION: "PR-${{ github.event.pull_request.number }}"
     runs-on: ubuntu-latest
     steps:
@@ -21,11 +20,9 @@ jobs:
         run: |
           make pb
 
-      - name: Update Go Vendor
-        working-directory: pfcpiface
+      - name: Update Go modules
         run: |
           go mod tidy
-          go mod vendor
 
       - name: Build the Docker image
         run: |
@@ -44,10 +41,6 @@ jobs:
           chmod +x shfmt && sudo mv shfmt /bin
           # https://github.com/mvdan/sh/issues/288
           shfmt -l -w $(shfmt -f . | grep -v vendor/)
-      - name: Go Format
-        working-directory: pfcpiface
-        run: |
-          go fmt
 
       - name: Show all CI changes
         run: |

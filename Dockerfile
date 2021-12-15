@@ -3,8 +3,20 @@
 # Copyright (c) 2019 Intel Corporation
 
 # Multi-stage Dockerfile
+
+# Stage bess-deps: fetch BESS dependencies
+FROM ghcr.io/omec-project/upf-epc/bess_build AS bess-deps
+# BESS pre-reqs
+WORKDIR /bess
+ARG BESS_COMMIT=dpdk-2011-focal
+RUN curl -L https://github.com/NetSys/bess/tarball/${BESS_COMMIT} | \
+    tar xz -C . --strip-components=1
+COPY patches/bess patches
+RUN cat patches/* | patch -p1
+RUN cp -a protobuf /protobuf
+
 # Stage bess-build: builds bess with its dependencies
-FROM ghcr.io/omec-project/upf-epc/bess_build AS bess-build
+FROM bess-deps AS bess-build
 ARG CPU=native
 RUN apt-get update && \
     apt-get -y install --no-install-recommends \
@@ -25,17 +37,11 @@ RUN curl -L https://github.com/libbpf/libbpf/tarball/${LIBBPF_VER} | \
     make install && \
     ldconfig
 
-# BESS pre-reqs
 WORKDIR /bess
-ARG BESS_COMMIT=dpdk-2011-focal
-RUN curl -L https://github.com/NetSys/bess/tarball/${BESS_COMMIT} | \
-    tar xz -C . --strip-components=1
 
 # Patch BESS, patch and build DPDK
 COPY patches/dpdk/* deps/
-COPY patches/bess patches
-RUN cat patches/* | patch -p1 && \
-    ./build.py dpdk
+RUN ./build.py dpdk
 
 # Plugins
 RUN mkdir -p plugins
@@ -58,8 +64,7 @@ RUN ./build_bess.sh && \
     cp core/modules/*.so /bin/modules && \
     mkdir -p /opt/bess && \
     cp -r bessctl pybess /opt/bess && \
-    cp -r core/pb /pb && \
-    cp -a protobuf /protobuf
+    cp -r core/pb /pb
 
 # Stage bess: creates the runtime image of BESS
 FROM python:3.9.9-slim AS bess
@@ -96,32 +101,19 @@ ENTRYPOINT ["bessd", "-f"]
 FROM golang AS protoc-gen
 RUN go get github.com/golang/protobuf/protoc-gen-go
 
-FROM bess-build AS go-pb
+FROM bess-deps AS go-pb
 COPY --from=protoc-gen /go/bin/protoc-gen-go /bin
 RUN mkdir /bess_pb && \
-    protoc -I /usr/include -I /protobuf/ \
+    protoc -I /usr/include -I /protobuf \
         /protobuf/*.proto /protobuf/ports/*.proto \
         --go_opt=paths=source_relative --go_out=plugins=grpc:/bess_pb
 
-FROM golang AS pfcpiface-build
-WORKDIR /pfcpiface
-COPY pfcpiface .
-RUN CGO_ENABLED=0 go build -mod=vendor -o /bin/pfcpiface
-
-# Stage pfcpiface: runtime image of pfcpiface toward SMF/SPGW-C
-FROM alpine AS pfcpiface
-COPY conf /opt/bess/bessctl/conf
-COPY conf/p4/bin/p4info.bin conf/p4/bin/p4info.txt conf/p4/bin/bmv2.json /bin/
-COPY --from=pfcpiface-build /bin/pfcpiface /bin
-ENTRYPOINT [ "/bin/pfcpiface" ]
-
 # Stage pb: dummy stage for collecting protobufs
 FROM scratch AS pb
-COPY --from=bess-build /protobuf /protobuf
+COPY --from=bess-deps /bess/protobuf /protobuf
 COPY --from=go-pb /bess_pb /bess_pb
 
 # Stage binaries: dummy stage for collecting artifacts
 FROM scratch AS artifacts
 COPY --from=bess /bin/bessd /
-COPY --from=pfcpiface /bin/pfcpiface /
 COPY --from=bess-build /bess /bess

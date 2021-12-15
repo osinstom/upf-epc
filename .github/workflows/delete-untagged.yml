@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: ["bess_build", "upf-epc-bess", "upf-epc-pfcpiface"]
+        package: ["bess_build", "bess-upf"]
     steps:
       - name: Delete image
         uses: bots-house/ghcr-delete-image-action@9dee3adb4e4082ef06710f3d8aa9f7e73f89d189
         with:
           # NOTE: at now only orgs is supported
           owner: omec-project
-          name: upf-epc/${{ matrix.package }}
+          name: bess-upf/${{ matrix.package }}
           # NOTE: using Personal Access Token
           token: ${{ secrets.CR_PAT }}
           untagged-keep-latest: 1
