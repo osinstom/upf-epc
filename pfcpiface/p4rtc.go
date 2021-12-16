@@ -27,9 +27,9 @@ const invalidID = 0
 
 // Table Entry Function Type.
 const (
-	FunctionTypeInsert uint8  = 1               // Insert table Entry Function
-	FunctionTypeUpdate uint8  = 2               // Update table Entry Function
-	FunctionTypeDelete uint8  = 3               // Delete table Entry Function
+	FunctionTypeInsert uint8 = 1 // Insert table Entry Function
+	FunctionTypeUpdate uint8 = 2 // Update table Entry Function
+	FunctionTypeDelete uint8 = 3 // Delete table Entry Function
 )
 
 // P4rtClient ... P4 Runtime client object.
@@ -42,9 +42,8 @@ type P4rtClient struct {
 	digests    chan *p4.DigestList
 
 	// exported fields
-	P4Info   p4ConfigV1.P4Info
+	P4Info p4ConfigV1.P4Info
 }
-
 
 // CheckStatus ... Check client connection status.
 func (c *P4rtClient) CheckStatus() (state int) {
