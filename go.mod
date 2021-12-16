@@ -1,5 +1,5 @@
 //module github.com/omec-project/bess-upf
-module github.com/osinstom/bess-upf
+module github.com/osinstom/upf-epc
 
 go 1.13
 
